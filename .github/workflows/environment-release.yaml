@@ -10,7 +10,9 @@ on:
         type: string
       cluster_location:
         type: string
-      BOT_USER:
+      BOT_USER_NAME:
+        type: string
+      BOT_USER_EMAIL:
         type: string
     secrets:
       BOT_TOKEN:
@@ -20,7 +22,8 @@ env:
   JX_KUBERNETES: true
   SOURCE_DIR: "${{ github.workspace }}/source"
   VERSTION_STREAM_ABS_PATH: "${{ github.workspace }}/source/versionStream"
-  BOT_USER: ${{ inputs.BOT_USER }}
+  BOT_USER: ${{ inputs.BOT_USER_NAME }}
+  BOT_USER_EMAIL: ${{ inputs.BOT_USER_EMAIL }}
 
 jobs:
   apply:
@@ -45,6 +48,7 @@ jobs:
       - name: Setup git credentials
         run: |
           git config --global user.name $BOT_USER
+          git config --global user.email $BOT_USER_EMAIL
           git config --global credential.helper store
           git config --global --add safe.directory '*'
       - uses: actions/checkout@v3
