@@ -52,7 +52,7 @@ jobs:
           git config --global credential.helper store
           git config --global --add safe.directory '*'
 
-          git clone https://x-access-token:${{ secrets.BOT_TOKEN }}@github.com/prodoscore/jx-devops01
+          git clone --recurse-submodules https://x-access-token:${{ secrets.BOT_TOKEN }}@github.com/prodoscore/jx-devops01
       - uses: actions/checkout@v3
         with:
           token: secrets.BOT_TOKEN
