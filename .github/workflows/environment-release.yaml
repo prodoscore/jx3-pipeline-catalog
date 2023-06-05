@@ -53,7 +53,7 @@ jobs:
           git config --global --add safe.directory '*'
       - uses: actions/checkout@v3
         with:
-          token: secrets.BOT_TOKEN
+          token: ${{ secrets.BOT_TOKEN }}
           path: "${{ github.workspace }}/source"
           submodules: recursive
       - id: "auth"
