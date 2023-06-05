@@ -41,13 +41,16 @@ jobs:
           curl -L https://github.com/jenkins-x/jx/releases/download/v3.7.7/jx-linux-amd64.tar.gz | tar xzv
           chmod +x jx 
           mv jx /usr/local/bin
+      - name: Setup git credentials
+        run: |
+          git config --global user.name $BOT_USER
+          git config --global credential.helper store
+          git config --global --add safe.directory '*'
       - uses: actions/checkout@v3
         with:
           token: secrets.BOT_TOKEN
           path: "${{ github.workspace }}/source"
           submodules: true
-      - run: |
-          git config --global --add safe.directory '*'
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1"
