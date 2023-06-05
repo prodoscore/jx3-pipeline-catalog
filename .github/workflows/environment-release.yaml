@@ -43,6 +43,7 @@ jobs:
           mv jx /usr/local/bin
       - uses: actions/checkout@v3
         with:
+          token: secrets.BOT_TOKEN
           path: "${{ github.workspace }}/source"
           submodules: true
       - run: |
