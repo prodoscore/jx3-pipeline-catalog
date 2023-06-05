@@ -19,6 +19,7 @@ on:
 env:
   JX_KUBERNETES: true
   SOURCE_DIR: "${{ github.workspace }}/source"
+  VERSTION_STREAM_ABS_PATH: "${{ github.workspace }}/source/versionStream"
 
 jobs:
   apply:
