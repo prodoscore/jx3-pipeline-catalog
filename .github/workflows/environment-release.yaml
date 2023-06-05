@@ -56,6 +56,11 @@ jobs:
           token: ${{ secrets.BOT_TOKEN }}
           path: "${{ github.workspace }}/source"
           submodules: true
+      - name: test
+        working-directory: "${{ github.workspace }}/source"
+        run: |
+          cd versionStream
+          git checkout submodules
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1"
