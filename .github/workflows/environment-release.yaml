@@ -51,13 +51,11 @@ jobs:
           git config --global user.email $BOT_USER_EMAIL
           git config --global credential.helper store
           git config --global --add safe.directory '*'
-
-          git clone --recurse-submodules https://x-access-token:${{ secrets.BOT_TOKEN }}@github.com/prodoscore/jx-devops01
       - uses: actions/checkout@v3
         with:
           token: secrets.BOT_TOKEN
           path: "${{ github.workspace }}/source"
-          submodules: true
+          submodules: recursive
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1"
