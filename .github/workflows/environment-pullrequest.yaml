@@ -10,14 +10,16 @@ on:
         type: string
       cluster_location:
         type: string
-      BOT_USER:
+      BOT_USER_NAME:
+        type: string
+      BOT_USER_EMAIL:
         type: string
     secrets:
       BOT_TOKEN:
         description: "Bot token"
         required: true
 env:
-  GIT_AUTHOR_NAME: ${{ inputs.BOT_USER }}
+  GIT_AUTHOR_NAME: ${{ inputs.BOT_USER_NAME }}
   PULL_BASE_REF: ${{ github.base_ref }}
   PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
   PULL_NUMBER: ${{ github.event.pull_request.number }}
@@ -33,6 +35,8 @@ env:
   JX_KUBERNETES: true
   SOURCE_DIR: "${{ github.workspace }}/source"
   VERSTION_STREAM_ABS_PATH: "${{ github.workspace }}/source/versionStream"
+  BOT_USER: ${{ inputs.BOT_USER_NAME }}
+  BOT_USER_EMAIL: ${{ inputs.BOT_USER_EMAIL }}
 
 jobs:
   verify:
@@ -54,13 +58,17 @@ jobs:
           curl -L https://github.com/jenkins-x/jx/releases/download/v3.7.7/jx-linux-amd64.tar.gz | tar xzv
           chmod +x jx 
           mv jx /usr/local/bin
+      - name: Setup git credentials
+        run: |
+          git config --global user.name $BOT_USER
+          git config --global user.email $BOT_USER_EMAIL
+          git config --global credential.helper store
+          git config --global --add safe.directory '*'
       - uses: actions/checkout@v3
         with:
-          token: secrets.BOT_TOKEN
+          token: ${{ secrets.BOT_TOKEN }}
           path: "${{ github.workspace }}/source"
           submodules: true
-      - run: |
-          git config --global --add safe.directory '*'
       - name: git-clone
         working-directory: "${{ github.workspace }}/source"
         run: |
@@ -84,6 +92,93 @@ jobs:
             fi
           done
           exit 1
+      - name: Get branches with PRs for each submodule
+        uses: actions/github-script@v6
+        id: get-branches
+        with:
+          github-token: ${{ secrets.BOT_TOKEN }}
+          script: |
+            const path = require('path');
+            const child_process = require('child_process');
+
+            const workspace = process.env.GITHUB_WORKSPACE;
+            const sourceDirectory = path.join(workspace, 'source');
+
+            // Change the current working directory to the cloned directory
+            process.chdir(sourceDirectory);
+            const urls = child_process.execSync('git config --file .gitmodules --get-regexp url | awk \'{ print $2 }\'').toString().trim().split('\n');
+
+            console.log(`Submodule URLs: ${urls}`);
+
+            // Prepare an object to store the branch names for each submodule
+            const submoduleBranches = {};
+
+            // Iterate over each submodule
+            for (const url of urls) {
+              // Ensure that the URL is not empty
+              if (!url) {
+                console.log(`Empty URL encountered. Skipping...`);
+                continue;
+              }
+
+              // Extract the owner and repo from the URL
+              const match = url.match(/github.com[:/](.+)\/(.+)\.git/);
+
+              // Ensure that the regular expression matched
+              if (!match) {
+                console.log(`Could not extract owner and repo from URL: ${url}`);
+                continue;
+              }
+
+              const [, owner, repo] = match;
+
+              console.log(`Owner: ${owner} Repo: ${repo}`)
+
+              console.log(`Fetching PRs for ${owner}/${repo}`);
+
+              // Get the open PRs to main
+              const pullRequests = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                base: 'main',
+              });
+
+              // Extract the branch names
+              const branchNames = pullRequests.data.map(pr => pr.head.ref);
+
+              console.log(`Branches with PRs: ${branchNames}`);
+
+              // Store the branch names
+              submoduleBranches[`${repo}`] = branchNames;
+            }
+
+            console.log(`Result: ${JSON.stringify(submoduleBranches)}`);
+            console.log(`Type of submoduleBranches: ${typeof submoduleBranches}`);
+            console.log(`Value of submoduleBranches: ${JSON.stringify(submoduleBranches)}`);
+            const results = JSON.stringify(submoduleBranches)
+            return results;
+          result-encoding: string
+
+      - name: Checkout branches in each submodule
+        working-directory: "${{ github.workspace }}/source"
+        shell: bash
+        run: |
+          branches_json=$(jq -n --argjson obj '${{ steps.get-branches.outputs.result }}' '$obj')
+          if [ "$branches_json" == '"[object Object]"' ]; then
+            echo "No branches found."
+          exit 0
+          fi
+          for submodule in $(git submodule status | awk '{print $2}'); do
+            cd $submodule
+            git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+
+            for branch in $(jq -r --arg submodule $submodule '.[$submodule][]' <<<"$branches_json"); do
+              git fetch origin $branch
+              git checkout -b $branch origin/$branch
+            done
+            cd ..
+          done
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1"
@@ -114,5 +209,5 @@ jobs:
         run: make pr
         env:
           HELMFILE_CACHE_HOME: "${{ github.workspace }}/.cache"
-          GITHUB_ACTOR: ${{ inputs.BOT_USER }}
+          GITHUB_ACTOR: ${{ inputs.BOT_USER_NAME }}
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
