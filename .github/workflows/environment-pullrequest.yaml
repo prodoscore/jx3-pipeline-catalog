@@ -64,6 +64,7 @@ jobs:
           path: "${{ github.workspace }}/source"
           submodules: true
       - name: Setup git credentials
+        working-directory: "${{ github.workspace }}/source"
         run: |
           git config --global user.name $BOT_USER
           git config --global user.email $BOT_USER_EMAIL
