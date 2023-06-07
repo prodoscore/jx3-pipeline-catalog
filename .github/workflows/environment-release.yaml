@@ -27,6 +27,7 @@ env:
 
 jobs:
   apply:
+    # if: ${{ github.actor }} != ${{ inputs.BOT_USER_NAME }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
