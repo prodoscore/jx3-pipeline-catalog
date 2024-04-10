@@ -1,37 +1,34 @@
 name: commit_message_checker
+
 on:
-  workflow_call:
-    outputs:
-      build_env:
-        value: ${{ jobs.check.outputs.build_env }}
-env:
-  GIT_COMMENT: ${{ github.event.head_commit.message }}
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
 
 jobs:
-  check:
+
+  deploy-qa:
+    if: contains(github.event.pull_request.body, '/deploy ')
     runs-on: ubuntu-latest
-    outputs:
-      build_env: ${{ steps.check.outputs.build_env }}
     steps:
-      - name: Check
-        id: check
-        run: |-
-          #!/bin/bash
-          BUILD_PARAMETER=$(echo $GIT_COMMENT | awk -F':' '{print $1}')
-          echo "BUILD_PARAMETER: $BUILD_PARAMETER"
-          if [[ "$BUILD_PARAMETER" == 'build' ]]; then
-            echo "Commit message contains 'build'. Triggering the workflow."
-            build_env=$(echo $GIT_COMMENT | awk -F':' '{print $2}')
-            echo "BUILD_ENV: $build_env"
-            echo "build_env=${build_env}" >> "$GITHUB_OUTPUT"
-          else
-            echo "Commit message does not contain 'build'. Exiting without running the workflow."
-            exit 78
-          fi
-      - name: Print build_env
-        run: echo "build_env=${{ steps.check.outputs.build_env }}"
 
+    - name: Checkout code
+      uses: actions/checkout@v3
 
+    - name: Extract QA Environment
+      id: extract-env
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const body = context.payload.pull_request.body
+          const match = body.match(/\/deploy\s+(\w+)/);
+          const env = match ? match[1] : '';
+          core.setOutput('env', env);
+
+    - name: Deploy to QA Environment
+      if: steps.extract-env.outputs.env != ''
+      run: |
+        echo "Deploying to QA environment: ${{ steps.extract-env.outputs.env }}"
+        # Add your deployment script/commands here
 
 
 
