@@ -101,6 +101,7 @@ jobs:
                         echo "SHA: $GIT_SHORT_HASH"
                         echo "Building Docker image ..."
                         docker build -f "Dockerfile" -t "$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME:$GIT_SHORT_HASH" .
+                        gcloud builds submit --tag "$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME:$GIT_SHORT_HASH" .
 
                         # echo "*************************************************************"
 
