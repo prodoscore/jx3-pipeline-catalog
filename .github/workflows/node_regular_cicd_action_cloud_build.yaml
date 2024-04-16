@@ -83,6 +83,7 @@ jobs:
       - name: Docker_Build        
         run: |-
                     #!/bin/bash
+                    echo "Start Time: $(date +%T)"
                     REGISTRIES="${{env.REGISTRIES}}"
                     REPOSITORY="${{env.REPOSITORY}}"
                     GIT_SHORT_HASH="0.0.0-$(git rev-parse --short HEAD)"
@@ -101,26 +102,27 @@ jobs:
                         echo "Building Docker image ..."
                         docker build -f "Dockerfile" -t "$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME:$GIT_SHORT_HASH" .
 
-                        echo "*************************************************************"
+                        # echo "*************************************************************"
 
-                        docker image ls | grep -ai $REGISTRIES
-                        docker image ls | grep -ai $REGISTRIES > dockertags.txt
+                        # docker image ls | grep -ai $REGISTRIES
+                        # docker image ls | grep -ai $REGISTRIES > dockertags.txt
 
-                        # Read input from dockertags.txt
-                        echo "##### Docker build details" >> comment.txt
-                        echo "IMAGE | TAG | SIZE" >> comment.txt
-                        echo "------ | ------ | ------ " >> comment.txt
+                        # # Read input from dockertags.txt
+                        # echo "##### Docker build details" >> comment.txt
+                        # echo "IMAGE | TAG | SIZE" >> comment.txt
+                        # echo "------ | ------ | ------ " >> comment.txt
 
-                        while IFS= read -r line; do
-                            # Use '/' as the delimiter and print the text after the 4th '/'
-                            OUTPUT=$(echo "$line" | awk -F'/' '{print $(NF-0)}')
-                            IMAGE=$(echo "$OUTPUT" | awk '{print $1}')
-                            TAG=$(echo "$OUTPUT" | awk '{print $2}')
-                            SIZE=$(echo "$OUTPUT" | awk '{print $7}')
-                            # Print the result
-                            echo "$IMAGE | $TAG | $SIZE" >> comment.txt
-                        done < dockertags.txt
+                        # while IFS= read -r line; do
+                        #     # Use '/' as the delimiter and print the text after the 4th '/'
+                        #     OUTPUT=$(echo "$line" | awk -F'/' '{print $(NF-0)}')
+                        #     IMAGE=$(echo "$OUTPUT" | awk '{print $1}')
+                        #     TAG=$(echo "$OUTPUT" | awk '{print $2}')
+                        #     SIZE=$(echo "$OUTPUT" | awk '{print $7}')
+                        #     # Print the result
+                        #     echo "$IMAGE | $TAG | $SIZE" >> comment.txt
+                        # done < dockertags.txt
                     done
+                    echo "End Time: $(date +%T)"
       # - name: Docker_Push
       #   id: docker_push
       #   run: |
