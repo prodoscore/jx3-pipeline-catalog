@@ -79,6 +79,8 @@ jobs:
         run: |-
               #!/bin/bash
               gcloud auth configure-docker us-docker.pkg.dev
+              gcloud config get-value project
+
 
       - name: Docker_Build        
         run: |-
