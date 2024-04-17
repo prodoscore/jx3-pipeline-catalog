@@ -83,6 +83,7 @@ jobs:
       - name: Docker_Build        
         run: |-
                     #!/bin/bash
+                    echo "Cpu : $(sysctl -n hw.ncpu)"
                     echo "Start Time: $(date +%T)"
                     REGISTRIES="${{env.REGISTRIES}}"
                     REPOSITORY="${{env.REPOSITORY}}"
