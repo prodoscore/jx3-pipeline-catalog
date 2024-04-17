@@ -87,7 +87,8 @@ jobs:
                     #!/bin/bash
                     gcloud config set project  prodoscore-artifactory
                     gcloud config get-value project
-                    echo "Cpu : $(sysctl -n hw.ncpu)"
+                    vCPU_count=$(nproc)
+                    echo "vCPU count: $vCPU_count"
                     echo "Start Time: $(date +%T)"
                     REGISTRIES="${{env.REGISTRIES}}"
                     REPOSITORY="${{env.REPOSITORY}}"
