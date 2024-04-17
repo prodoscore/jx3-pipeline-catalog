@@ -79,12 +79,14 @@ jobs:
         run: |-
               #!/bin/bash
               gcloud auth configure-docker us-docker.pkg.dev
-              gcloud config get-value project
+              
 
 
       - name: Docker_Build        
         run: |-
                     #!/bin/bash
+                    gcloud config set project  prodoscore-artifactory
+                    gcloud config get-value project
                     echo "Start Time: $(date +%T)"
                     REGISTRIES="${{env.REGISTRIES}}"
                     REPOSITORY="${{env.REPOSITORY}}"
@@ -104,6 +106,7 @@ jobs:
                         echo "Building Docker image ..."
                         #docker build -f "Dockerfile" -t "$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME:$GIT_SHORT_HASH" .
                         gcloud builds submit --tag "$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME:$GIT_SHORT_HASH" .
+                        #gcloud builds submit --tag "us-docker.pkg.dev/prodoscore-artifactory/images/bb-l1-kube-controller:0.0.1" .
 
                         # echo "*************************************************************"
 
