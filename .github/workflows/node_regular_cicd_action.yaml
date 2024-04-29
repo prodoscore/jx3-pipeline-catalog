@@ -193,17 +193,22 @@ jobs:
               # helm repo index "${CHARTS_DIR}" --url "oci://us-docker.pkg.dev/prodoscore-artifactory/charts/ "
               ls -ltrh charts 
               echo "Helm charts packaged/indexed/push successfully!"  
-      - uses: actions/github-script@v7
+      # - uses: actions/github-script@v7
+      #   id: get_pr_data
+      #   with:
+      #     script: |
+      #         return (
+      #           await github.rest.repos.listPullRequestsAssociatedWithCommit({
+      #             commit_sha: context.sha,
+      #             owner: context.repo.owner,
+      #             repo: context.repo.repo,
+      #           })
+      #         ).data[0];
+      - name: Get_pr_data
         id: get_pr_data
-        with:
-          script: |
-              return (
-                await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                  commit_sha: context.sha,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                })
-              ).data[0];
+        run: |
+          PR_URL="${{ inputs.PR_NUMBER }}"
+          pr_number=${PR_URL##*/}
       - name: Debug
         run: |
               #!/bin/bash  
