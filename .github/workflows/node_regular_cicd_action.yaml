@@ -190,14 +190,6 @@ jobs:
               # helm repo index "${CHARTS_DIR}" --url "oci://us-docker.pkg.dev/prodoscore-artifactory/charts/ "
               ls -ltrh charts 
               echo "Helm charts packaged/indexed/push successfully!"  
-      - name: Debug
-        run: |
-              #!/bin/bash  
-              echo "${{ inputs.PR_NUMBER }}"
-              echo "${{ secrets.GITHUB_TOKEN }}"
-              echo "Image Name: ${{ steps.docker_push.outputs.image_name }}"
-
-
       - uses: actions/github-script@v7
         id: get_pr_data
         with:
@@ -209,6 +201,13 @@ jobs:
                   repo: context.repo.repo,
                 })
               ).data[0];
+      - name: Debug
+        run: |
+              #!/bin/bash  
+              echo '${{ fromJson(steps.get_pr_data.outputs.result).number }}'
+              echo '${{ fromJson(steps.get_pr_data.outputs.result).title }}'
+              echo "${{ fromJson(steps.get_pr_data.outputs.result).number }}"
+
       - name: Pull Request data
         id: pr_data
         run: |
