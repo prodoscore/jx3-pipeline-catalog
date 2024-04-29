@@ -10,6 +10,9 @@ on:
         type: string
       cluster_location:
         type: string
+      pr_number:
+        type: string
+        required: true
     #   BOT_USER:
     #     type: string
     #   PR_NUMBER:
@@ -204,6 +207,7 @@ jobs:
       - name: Debug
         run: |
               #!/bin/bash  
+              echo '${{ inputs.PR_NUMBER }}'
               echo '${{ fromJson(steps.get_pr_data.outputs.result).number }}'
               echo '${{ fromJson(steps.get_pr_data.outputs.result).title }}'
               echo "${{ fromJson(steps.get_pr_data.outputs.result).number }}"
