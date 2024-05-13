@@ -66,9 +66,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          #ref: ${{ github.event.client_payload.ref }}
-          ref: ${{ inputs.ref }}
+      #  with:
+      #    #ref: ${{ github.event.client_payload.ref }}
+      #    ref: ${{ inputs.ref }}
+      - name: Checkout Pull Request
+        run: hub pr checkout ${{ github.event.issue.number }}
+        #env:
+        #  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - id: 'Auth'
         name: 'Authenticate_to_Google_Cloud'
