@@ -68,7 +68,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           #ref: ${{ github.event.client_payload.ref }}
-           ref: refs/pull/${{ inputs.ref }}
+           ref: refs/pull/${{ inputs.ref }}/head
 
 
       - id: 'Auth'
@@ -76,7 +76,7 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account }}/head
+          service_account: ${{ inputs.service_account }}
 
       - name: 'Set_Up_Cloud_SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
