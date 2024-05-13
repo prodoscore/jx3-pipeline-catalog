@@ -64,8 +64,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.issue.pull_request.head.ref }}
-          
+          ref: ${{ github.event.client_payload.ref }}
+
       - id: 'Auth'
         name: 'Authenticate_to_Google_Cloud'
         uses: 'google-github-actions/auth@v1'
