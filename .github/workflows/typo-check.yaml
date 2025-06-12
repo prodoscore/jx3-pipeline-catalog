@@ -40,11 +40,24 @@ jobs:
 
     - name: Install typos CLI
       run: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        # Fetch the latest release URL
         LATEST_URL=$(curl -s https://api.github.com/repos/crate-ci/typos/releases/latest \
           | grep browser_download_url \
           | grep x86_64-unknown-linux-musl.tar.gz \
           | cut -d '"' -f 4)
-        curl -LsSf "$LATEST_URL" | tar xzf - -C /usr/local/bin
+
+        # Create a temp directory
+        TMP_DIR=$(mktemp -d)
+        trap 'rm -rf "$TMP_DIR"' EXIT
+
+        # Download and extract in the temp directory
+        curl -LsSf "$LATEST_URL" | tar xzf - -C "$TMP_DIR"
+
+        # Move binary to /usr/local/bin with sudo
+        sudo mv "$TMP_DIR/typos" /usr/local/bin/
 
     - name: Setup typos config
       run: |
