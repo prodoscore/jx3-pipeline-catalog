@@ -15,6 +15,11 @@ on:
         required: true
       ref:
         type: string
+      config_file:
+        description: 'Path to typos config file'
+        required: false
+        type: string
+        default: '.typos.toml'
       exclude_patterns:
         description: 'File patterns to exclude (space-separated)'
         required: false
@@ -352,20 +357,20 @@ jobs:
 
           # Move binary to /usr/local/bin with sudo
           sudo mv "$TMP_DIR/typos" /usr/local/bin/
-
-          # Check if custom config exists
-          if [ -f ".typos.toml" ]; then
-            echo "Using custom config: .typos.toml"
-            cp ".typos.toml" /tmp/typos.toml
-          else
-            echo "No custom config found, using default settings"
-            echo "[default]" > /tmp/typos.toml
-          fi
       - name: Get changed lines and check typos
         if: github.event.issue.pull_request
         id: typo-check
         continue-on-error: true
         run: |
+          # Check if custom config exists
+          if [ -f "${{ inputs.config_file }}" ]; then
+            echo "Using custom config: ${{ inputs.config_file }}"
+            cp "${{ inputs.config_file }}" /tmp/typos.toml
+          else
+            echo "No custom config found, using default settings."
+            echo "[default]" > /tmp/typos.toml
+          fi
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # For PR: compare against target branch
             BASE_SHA="${{ github.event.pull_request.base.sha }}"

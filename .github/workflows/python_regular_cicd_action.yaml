@@ -15,6 +15,11 @@ on:
         required: true
       ref:
         type: string
+      config_file:
+        description: 'Path to typos config file'
+        required: false
+        type: string
+        default: '.typos.toml'
       exclude_patterns:
         description: 'File patterns to exclude (space-separated)'
         required: false
