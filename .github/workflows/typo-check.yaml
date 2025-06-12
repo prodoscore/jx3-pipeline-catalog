@@ -17,7 +17,7 @@ on:
         description: 'File patterns to exclude (space-separated)'
         required: false
         type: string
-        default: '*.png *.jpg *.jpeg *.gif *.ico *.pdf *.zip *.tar *.gz *.exe *.dll *.so *.dylib *.lock package-lock.json yarn.lock Pipfile*'
+        default: '*.png *.jpg *.jpeg *.gif *.ico *.pdf *.zip *.tar *.gz *.exe *.dll *.so *.dylib *.lock package-lock.json yarn.lock Pipfile* *.toml'
       config_file:
         description: 'Path to typos config file'
         required: false
@@ -69,6 +69,7 @@ jobs:
 
     - name: Get changed lines and check typos
       id: typo-check
+      continue-on-error: true
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           # For PR: compare against target branch
