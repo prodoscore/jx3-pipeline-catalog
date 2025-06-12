@@ -162,14 +162,14 @@ jobs:
                       fi
 
                       if [ -n "$TYPO" ] && [ -n "$SUGGESTION" ]; then
-                        echo "**Issue:** \`$TYPO\` should be \`$SUGGESTION\`"
+                        echo "Issue: \`$TYPO\` should be \`$SUGGESTION\`"
                       fi
                     fi
                   done
 
                   # If no formatted output was generated, show raw output
-                  if [ ! -s /tmp/typo-check/report.md ] || ! grep -q "### " /tmp/typo-check/report.md; then
-                    echo "### Raw Output"
+                  if [ ! -s /tmp/typo-check/report.md ] || ! grep -q "#### " /tmp/typo-check/report.md; then
+                    echo "#### Raw Output"
                     echo "\`\`\`"
                     echo "$TYPO_OUTPUT"
                     echo "\`\`\`"
@@ -208,8 +208,6 @@ jobs:
             echo "1. Update the misspelled words in your code"
             echo "2. Commit and push your changes"
             echo "3. This check will automatically pass once the typos are corrected"
-            echo
-            echo "*This check was performed by the reusable typo-check workflow* ✨"
           } > /tmp/typo-check/full_report.md
 
           # Make report available for next step
