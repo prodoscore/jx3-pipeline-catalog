@@ -136,7 +136,7 @@ jobs:
 
                 # Parse typos output to create formatted report
                 {
-                  echo "## 📄 \`$file\`"
+                  echo "### 📄 \`$file\`"
                   echo
 
                   # Process each line of typo output
@@ -161,22 +161,9 @@ jobs:
                         SUGGESTION=$(echo "$line" | sed -n "s/.*should be *\([^ ]*\)/\1/p")
                       fi
 
-                      # Extract line number if present
-                      LINE_NUM=$(echo "$line" | sed -n 's/.*:\([0-9]*\):.*/\1/p')
-                      if [ -n "$LINE_NUM" ]; then
-                        LINE_INFO="Line $LINE_NUM"
-                      else
-                        LINE_INFO="Found issue"
-                      fi
-
                       if [ -n "$TYPO" ] && [ -n "$SUGGESTION" ]; then
                         echo "### $LINE_INFO"
                         echo "**Issue:** \`$TYPO\` should be \`$SUGGESTION\`"
-                        echo "\`\`\`diff"
-                        echo "- $TYPO"
-                        echo "+ $SUGGESTION"
-                        echo "\`\`\`"
-                        echo
                       fi
                     fi
                   done
@@ -211,14 +198,14 @@ jobs:
 
           # Prepare the enhanced report
           {
-            echo "# 📝 Spelling Issues Found"
+            echo "## 📝 Spelling Issues Found"
             echo
             echo "Hey there! I found some typos in your recent changes that need fixing:"
             echo
             cat /tmp/typo-check/report.md
             echo "---"
             echo
-            echo "## 🔧 How to Fix"
+            echo "### 🔧 How to Fix"
             echo "1. Update the misspelled words in your code"
             echo "2. Commit and push your changes"
             echo "3. This check will automatically pass once the typos are corrected"
