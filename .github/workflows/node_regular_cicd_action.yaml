@@ -15,6 +15,11 @@ on:
         required: true
       ref:
         type: string
+      exclude_patterns:
+        description: 'File patterns to exclude (space-separated)'
+        required: false
+        type: string
+        default: '*.png *.jpg *.jpeg *.gif *.ico *.pdf *.zip *.tar *.gz *.exe *.dll *.so *.dylib *.lock package-lock.json yarn.lock Pipfile* *.toml'
 
     #   BOT_USER:
     #     type: string
@@ -349,9 +354,12 @@ jobs:
           sudo mv "$TMP_DIR/typos" /usr/local/bin/
 
           # Check if custom config exists
-          if [ -f "${{ inputs.config_file }}" ]; then
-            echo "Using custom config: ${{ inputs.config_file }}"
-            cp "${{ inputs.config_file }}" /tmp/typos.toml
+          if [ -f ".typos.toml" ]; then
+            echo "Using custom config: .typos.toml"
+            cp ".typos.toml" /tmp/typos.toml
+          else
+            echo "No custom config found, using default settings"
+            echo "[default]" > /tmp/typos.toml
           fi
       - name: Get changed lines and check typos
         if: github.event.issue.pull_request
