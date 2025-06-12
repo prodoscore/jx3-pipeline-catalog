@@ -428,31 +428,31 @@ jobs:
 
                     # Process each line of typo output
                     echo "$TYPO_OUTPUT" | while IFS= read -r line; do
-                      echo "Processing line: $line" >&2
+                    echo "Processing line: $line" >&2
 
-                      # Handle different typos output formats
-                      if [[ $line == *"error:"* ]] && [[ $line == *"should be"* ]]; then
-                        # Extract components using different patterns
-                        if [[ $line =~ error:\ \`([^`]+)\`\ should\ be\ \`([^`]+)\` ]]; then
-                          TYPO="${BASH_REMATCH[1]}"
-                          SUGGESTION="${BASH_REMATCH[2]}"
-                        elif [[ $line =~ error:\ \'([^\']+)\'\ should\ be\ \'([^\']+)\' ]]; then
-                          TYPO="${BASH_REMATCH[1]}"
-                          SUGGESTION="${BASH_REMATCH[2]}"
-                        elif [[ $line =~ ([^\ ]+)\ should\ be\ ([^\ ]+) ]]; then
-                          TYPO="${BASH_REMATCH[1]}"
-                          SUGGESTION="${BASH_REMATCH[2]}"
-                        else
-                          # Fallback: try to extract from the raw line
-                          TYPO=$(echo "$line" | sed -n "s/.*error: *\([^ ]*\) should be.*/\1/p")
-                          SUGGESTION=$(echo "$line" | sed -n "s/.*should be *\([^ ]*\)/\1/p")
-                        fi
-
-                        if [ -n "$TYPO" ] && [ -n "$SUGGESTION" ]; then
-                          echo "### $LINE_INFO"
-                          echo "**Issue:** \`$TYPO\` should be \`$SUGGESTION\`"
-                        fi
+                    # Handle different typos output formats
+                    if [[ $line == *"error:"* ]] && [[ $line == *"should be"* ]]; then
+                      # Extract components using different patterns
+                      if [[ $line =~ error:\ \`([^`]+)\`\ should\ be\ \`([^`]+)\` ]]; then
+                        TYPO="${BASH_REMATCH[1]}"
+                        SUGGESTION="${BASH_REMATCH[2]}"
+                      elif [[ $line =~ error:\ \'([^\']+)\'\ should\ be\ \'([^\']+)\' ]]; then
+                        TYPO="${BASH_REMATCH[1]}"
+                        SUGGESTION="${BASH_REMATCH[2]}"
+                      elif [[ $line =~ ([^\ ]+)\ should\ be\ ([^\ ]+) ]]; then
+                        TYPO="${BASH_REMATCH[1]}"
+                        SUGGESTION="${BASH_REMATCH[2]}"
+                      else
+                        # Fallback: try to extract from the raw line
+                        TYPO=$(echo "$line" | sed -n "s/.*error: *\([^ ]*\) should be.*/\1/p")
+                        SUGGESTION=$(echo "$line" | sed -n "s/.*should be *\([^ ]*\)/\1/p")
                       fi
+
+                      if [ -n "$TYPO" ] && [ -n "$SUGGESTION" ]; then
+                        echo "### $LINE_INFO"
+                        echo "**Issue:** \`$TYPO\` should be \`$SUGGESTION\`"
+                      fi
+                    fi
                     done
 
                     # If no formatted output was generated, show raw output
