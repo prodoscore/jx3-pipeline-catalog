@@ -362,6 +362,8 @@ jobs:
         id: typo-check
         continue-on-error: true
         run: |
+          #!/bin/bash
+
           # Check if custom config exists
           if [ -f "${{ inputs.config_file }}" ]; then
             echo "Using custom config: ${{ inputs.config_file }}"
