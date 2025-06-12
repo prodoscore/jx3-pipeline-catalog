@@ -477,3 +477,8 @@ jobs:
               echo "Skipping ${SUBDIR} as it does not contain a valid Helm chart"
             fi
           done
+
+      - name: Check Typos
+        uses: ./.github/workflows/typo-check.yaml
+        if: github.event.issue.pull_request
+        continue-on-error: true
