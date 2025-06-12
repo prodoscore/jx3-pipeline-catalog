@@ -303,10 +303,6 @@ jobs:
                 body: "✅ No CRITICAL or HIGH vulnerabilities found in the scan! 🎉"
               });
             }
-      - name: Check Typos
-        uses: ./.github/workflows/typo-check.yaml
-        if: github.event.issue.pull_request
-        continue-on-error: true
 
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~ ###
