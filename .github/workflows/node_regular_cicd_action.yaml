@@ -335,7 +335,7 @@ jobs:
         continue-on-error: true
         run: |
           #!/usr/bin/env bash
-          set -euo pipefail
+          set -eu
 
           # Fetch the latest release URL
           LATEST_URL=$(curl -s https://api.github.com/repos/crate-ci/typos/releases/latest \
