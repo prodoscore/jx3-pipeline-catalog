@@ -162,7 +162,6 @@ jobs:
                       fi
 
                       if [ -n "$TYPO" ] && [ -n "$SUGGESTION" ]; then
-                        echo "### $LINE_INFO"
                         echo "**Issue:** \`$TYPO\` should be \`$SUGGESTION\`"
                       fi
                     fi
