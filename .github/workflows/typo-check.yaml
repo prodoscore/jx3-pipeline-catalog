@@ -1,0 +1,179 @@
+name: Reusable Typo Check
+
+on:
+  workflow_call:
+    inputs:
+      target_branches:
+        description: 'Target branches to run on (JSON array)'
+        required: false
+        type: string
+        default: '["main", "develop"]'
+      file_patterns:
+        description: 'File patterns to include (space-separated)'
+        required: false
+        type: string
+        default: '**/*'
+      exclude_patterns:
+        description: 'File patterns to exclude (space-separated)'
+        required: false
+        type: string
+        default: '*.png *.jpg *.jpeg *.gif *.ico *.pdf *.zip *.tar *.gz *.exe *.dll *.so *.dylib *.lock package-lock.json yarn.lock Pipfile*'
+      config_file:
+        description: 'Path to typos config file'
+        required: false
+        type: string
+        default: '.typos.toml'
+
+jobs:
+  typos:
+    runs-on: ubuntu-latest
+    name: Check for typos in edited lines only
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # Fetch full history for accurate diff
+        fetch-depth: 0
+        # Use the calling repository's token
+        token: ${{ github.token }}
+
+    - name: Install typos CLI
+      run: |
+        curl -LsSf https://github.com/crate-ci/typos/releases/latest/download/typos-x86_64-unknown-linux-musl.tar.gz | tar xzf - -C /usr/local/bin
+
+    - name: Setup typos config
+      run: |
+        # Check if custom config exists
+        if [ -f "${{ inputs.config_file }}" ]; then
+          echo "Using custom config: ${{ inputs.config_file }}"
+          cp "${{ inputs.config_file }}" /tmp/typos.toml
+        fi
+
+    - name: Get changed lines and check typos
+      id: typo-check
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          # For PR: compare against target branch
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+        else
+          # For push: compare against previous commit
+          BASE_SHA="${{ github.event.before }}"
+          HEAD_SHA="${{ github.sha }}"
+        fi
+
+        echo "Checking typos in changed lines between $BASE_SHA and $HEAD_SHA"
+
+        # Create a temporary directory for processing
+        mkdir -p /tmp/typo-check
+
+        # Initialize typo report
+        FOUND_TYPOS=false
+
+        # Get exclude patterns
+        EXCLUDE_PATTERNS="${{ inputs.exclude_patterns }}"
+
+        # Function to check if file should be excluded
+        should_exclude_file() {
+          local file="$1"
+          for pattern in $EXCLUDE_PATTERNS; do
+            case "$file" in
+              $pattern)
+                return 0
+                ;;
+            esac
+          done
+          return 1
+        }
+
+        # Process each file in the diff
+        git diff --name-only $BASE_SHA..$HEAD_SHA | while read -r file; do
+          if [ -f "$file" ]; then
+            # Check if file should be excluded
+            if should_exclude_file "$file"; then
+              echo "Skipping excluded file: $file"
+              continue
+            fi
+
+            echo "Processing file: $file"
+
+            # Extract only the added lines (lines starting with +) for this file
+            git diff $BASE_SHA..$HEAD_SHA --no-color --unified=0 "$file" | \
+            grep "^+" | \
+            grep -v "^+++" | \
+            sed 's/^+//' > "/tmp/typo-check/${file//\//_}.added_lines"
+
+            # Check if there are any added lines
+            if [ -s "/tmp/typo-check/${file//\//_}.added_lines" ]; then
+              echo "Checking added lines in $file:"
+
+              # Run typos with config and capture output
+              TYPO_OUTPUT=$(typos --config /tmp/typos.toml --format long "/tmp/typo-check/${file//\//_}.added_lines" 2>&1 || true)
+
+              if [ -n "$TYPO_OUTPUT" ]; then
+                echo "❌ Typos found in added lines of $file"
+                echo "$TYPO_OUTPUT"
+
+                # Add to report for PR comment
+                {
+                  echo "### 📝 \`$file\`"
+                  echo '```'
+                  echo "$TYPO_OUTPUT"
+                  echo '```'
+                  echo
+                } >> /tmp/typo-check/report.md
+
+                echo "FOUND_TYPOS=true" >> /tmp/typo-check/status
+              else
+                echo "✅ No typos found in added lines of $file"
+              fi
+            else
+              echo "No added lines to check in $file"
+            fi
+            echo
+          fi
+        done
+
+        # Check if any typos were found and set output for next step
+        if [ -f "/tmp/typo-check/status" ] && grep -q "FOUND_TYPOS=true" /tmp/typo-check/status; then
+          echo "::error::Typos found in the changed lines. Please fix them before merging."
+          echo "HAS_TYPOS=true" >> $GITHUB_ENV
+
+          # Prepare the full report
+          {
+            echo "❌ **Typos found in your changes**"
+            echo
+            echo "The following typos were detected in the lines you added or modified:"
+            echo
+            cat /tmp/typo-check/report.md
+            echo "---"
+            echo "*Please fix these typos and push your changes. The format shows: \`incorrect_word -> suggested_correction\`*"
+            echo
+            echo "<sub>🤖 This check was performed by the reusable typo-check workflow</sub>"
+          } > /tmp/typo-check/full_report.md
+
+          # Make report available for next step
+          echo "TYPO_REPORT<<EOF" >> $GITHUB_ENV
+          cat /tmp/typo-check/full_report.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          exit 1
+        else
+          echo "✅ No typos found in any changed lines!"
+          echo "HAS_TYPOS=false" >> $GITHUB_ENV
+        fi
+
+    - name: Comment on PR with typo results
+      if: env.HAS_TYPOS == 'true' && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const typoReport = process.env.TYPO_REPORT;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: typoReport
+          });
