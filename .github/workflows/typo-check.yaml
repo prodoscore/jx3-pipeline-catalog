@@ -40,7 +40,11 @@ jobs:
 
     - name: Install typos CLI
       run: |
-        curl -LsSf https://github.com/crate-ci/typos/releases/latest/download/typos-x86_64-unknown-linux-musl.tar.gz | tar xzf - -C /usr/local/bin
+        LATEST_URL=$(curl -s https://api.github.com/repos/crate-ci/typos/releases/latest \
+          | grep browser_download_url \
+          | grep x86_64-unknown-linux-musl.tar.gz \
+          | cut -d '"' -f 4)
+        curl -LsSf "$LATEST_URL" | tar xzf - -C /usr/local/bin
 
     - name: Setup typos config
       run: |
