@@ -81,7 +81,7 @@ jobs:
           HEAD_SHA="${{ github.sha }}"
         fi
 
-        echo "Checking typos in changed lines between $BASE_SHA and $HEAD_SHA"
+        echo "🔍 Checking typos in changed lines between $BASE_SHA and $HEAD_SHA"
 
         # Create a temporary directory for processing
         mkdir -p /tmp/typo-check
@@ -110,11 +110,11 @@ jobs:
           if [ -f "$file" ]; then
             # Check if file should be excluded
             if should_exclude_file "$file"; then
-              echo "Skipping excluded file: $file"
+              echo "⏭️ Skipping excluded file: $file"
               continue
             fi
 
-            echo "Processing file: $file"
+            echo "📄 Processing file: $file"
 
             # Extract only the added lines (lines starting with +) for this file
             git diff $BASE_SHA..$HEAD_SHA --no-color --unified=0 "$file" | \
@@ -124,30 +124,46 @@ jobs:
 
             # Check if there are any added lines
             if [ -s "/tmp/typo-check/${file//\//_}.added_lines" ]; then
-              echo "Checking added lines in $file:"
+              echo "🔎 Checking added lines in $file..."
 
               # Run typos with config and capture output
               TYPO_OUTPUT=$(typos --config /tmp/typos.toml --format long "/tmp/typo-check/${file//\//_}.added_lines" 2>&1 || true)
 
               if [ -n "$TYPO_OUTPUT" ]; then
-                echo "❌ Typos found in added lines of $file"
-                echo "$TYPO_OUTPUT"
+                echo "❌ Typos found in $file"
 
-                # Add to report for PR comment
+                # Parse typos output to create formatted report
                 {
-                  echo "### 📝 \`$file\`"
-                  echo '```'
-                  echo "$TYPO_OUTPUT"
-                  echo '```'
+                  echo "## 📄 \`$file\`"
                   echo
+
+                  # Parse each typo line and format nicely
+                  echo "$TYPO_OUTPUT" | while IFS= read -r line; do
+                    if [[ $line == *"error:"* ]]; then
+                      # Extract the typo and suggestion
+                      TYPO=$(echo "$line" | sed -n "s/.*'\([^']*\)' should be '\([^']*\)'.*/\1/p")
+                      SUGGESTION=$(echo "$line" | sed -n "s/.*'\([^']*\)' should be '\([^']*\)'.*/\2/p")
+                      LINE_INFO=$(echo "$line" | sed -n 's/.*added_lines:\([0-9]*\):.*/Line \1/p')
+
+                      if [ -n "$TYPO" ] && [ -n "$SUGGESTION" ]; then
+                        echo "### $LINE_INFO"
+                        echo "**Issue:** \`$TYPO\` should be \`$SUGGESTION\`"
+                        echo "\`\`\`diff"
+                        echo "- $TYPO"
+                        echo "+ $SUGGESTION"
+                        echo "\`\`\`"
+                        echo
+                      fi
+                    fi
+                  done
                 } >> /tmp/typo-check/report.md
 
                 echo "FOUND_TYPOS=true" >> /tmp/typo-check/status
               else
-                echo "✅ No typos found in added lines of $file"
+                echo "✅ No typos found in $file"
               fi
             else
-              echo "No added lines to check in $file"
+              echo "ℹ️ No added lines to check in $file"
             fi
             echo
           fi
@@ -158,17 +174,21 @@ jobs:
           echo "::error::Typos found in the changed lines. Please fix them before merging."
           echo "HAS_TYPOS=true" >> $GITHUB_ENV
 
-          # Prepare the full report
+          # Prepare the enhanced report
           {
-            echo "❌ **Typos found in your changes**"
+            echo "# 📝 Spelling Issues Found"
             echo
-            echo "The following typos were detected in the lines you added or modified:"
+            echo "Hey there! I found some typos in your recent changes that need fixing:"
             echo
             cat /tmp/typo-check/report.md
             echo "---"
-            echo "*Please fix these typos and push your changes. The format shows: \`incorrect_word -> suggested_correction\`*"
             echo
-            echo "<sub>🤖 This check was performed by the reusable typo-check workflow</sub>"
+            echo "## 🔧 How to Fix"
+            echo "1. Update the misspelled words in your code"
+            echo "2. Commit and push your changes"
+            echo "3. This check will automatically pass once the typos are corrected"
+            echo
+            echo "*This check was performed by the reusable typo-check workflow* ✨"
           } > /tmp/typo-check/full_report.md
 
           # Make report available for next step
