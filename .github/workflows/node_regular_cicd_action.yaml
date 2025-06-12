@@ -326,7 +326,7 @@ jobs:
               });
             }
       - name: Check Typos
-        uses: ./.github/workflows/typo-check.yaml
+        uses: prodoscore/jx3-pipeline-catalog/.github/workflows/typo-check.yaml@typo-check
         if: github.event.issue.pull_request
         continue-on-error: true
 
