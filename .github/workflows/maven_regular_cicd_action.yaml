@@ -125,19 +125,24 @@ jobs:
         run: |
             echo "VERSION=$VERSION"
   
-      - name: Build and Deploy Google  Maven Artifact
+      - name: Build and Deploy Maven Artifact
         run: |
-            echo "Setting project version to $VERSION"
-            mvn versions:set -DnewVersion=$VERSION
-  
-            echo "Building project with Maven"
-            mvn --no-transfer-progress install
-  
-            echo "Deploying artifact to Artifact Registry"
-            mvn deploy:deploy-file \
-              -Durl=artifactregistry://us-central1-maven.pkg.dev/prodoscore-artifactory/prodoscore-java-libraries \
-              -DpomFile=pom.xml \
-              -Dfile=target/FrameworkUIAPI-${VERSION}.jar
+              echo "Setting project version to $VERSION"
+              mvn versions:set -DnewVersion=$VERSION
+          
+              echo "Building project"
+              mvn --no-transfer-progress install
+          
+              echo "Extracting artifactId from pom.xml"
+              ARTIFACT_ID=$(xmllint --xpath "/*[local-name()='project']/*[local-name()='artifactId']/text()" pom.xml)
+              echo "Artifact ID: $ARTIFACT_ID"
+          
+              echo "Deploying artifact to Artifact Registry"
+              mvn deploy:deploy-file \
+                -Durl=artifactregistry://us-central1-maven.pkg.dev/prodoscore-artifactory/prodoscore-java-libraries \
+                -DpomFile=pom.xml \
+                -Dfile=target/${ARTIFACT_ID}-${VERSION}.jar
+          
 
               
 
