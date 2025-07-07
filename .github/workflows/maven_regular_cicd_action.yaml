@@ -148,11 +148,14 @@ jobs:
             
       - name: Generate commenttxt
         run: |
-          echo "### ✅ Maven Artifact Built & Deployed" > comment.txt
-          echo "" >> comment.txt
+          echo "### ✅ Maven Artifact Built " > comment.txt
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+          ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+          VERSION=$VERSION
+      
+          echo "**Group ID:** \`$GROUP_ID\`  " > comment.txt
+          echo "**Artifact ID:** \`$ARTIFACT_ID\`  " >> comment.txt
           echo "**Version:** \`$VERSION\`" >> comment.txt
-          echo "**Repository:** \`${{ env.REPOSITORY }}\`" >> comment.txt
-          echo "**Artifact:** available via GCP Artifact Registry." >> comment.txt
 
       - name: Pull Request data
         id: pr_data
