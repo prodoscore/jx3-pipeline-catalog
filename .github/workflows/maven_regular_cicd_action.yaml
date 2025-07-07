@@ -118,9 +118,11 @@ jobs:
           
       - name: Set_Variables
         run: |
-          echo "VERSION=0.0.0-${{ github.event.issue.number }}" >> $GITHUB_ENV
-          echo "VERSION=0.0.0-PR-${{ github.event.issue.number }}-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo "VERSION: 0.0.0-PR-${{ github.event.issue.number }}-$(git rev-parse --short HEAD)"
+            pr_number="${{ github.event.issue.number }}"
+            GIT_SHORT_HASH="0.0.0-PR-${pr_number}-$(git rev-parse --short HEAD)"
+            echo "VERSION=$GIT_SHORT_HASH" >> $GITHUB_ENV
+            echo "VERSION=$GIT_SHORT_HASH"
+        
       - name: Echo Version
         run: |
             echo "VERSION=$VERSION"
