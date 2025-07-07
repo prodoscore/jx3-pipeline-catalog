@@ -1,4 +1,4 @@
-name: node_regular_cicd_action
+name: maven_regular_cicd_action
 on:
   workflow_call:
     inputs:
