@@ -105,10 +105,10 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
-      - name: 'Set_Up_Cloud_SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
-        with:
-          version: '>= 363.0.0'  
+      # - name: 'Set_Up_Cloud_SDK'
+      #   uses: 'google-github-actions/setup-gcloud@v2'
+      #   with:
+      #     version: '>= 363.0.0'  
 
       - name: Set up Java 18
         uses: actions/setup-java@v3
