@@ -115,11 +115,16 @@ jobs:
               #!/bin/bash
               gcloud auth configure-docker us-docker.pkg.dev
       
-      - name: Get_PR_Number
+      - name: Set_Variables
         run: |
-          pr_number='${{ github.event.issue.number }}'
-          echo "pr_number=${pr_number}" >> $GITHUB_ENV
-          echo "pr_number: ${pr_number}"
+          echo "VERSION=0.0.0-${{ github.event.issue.number }}" >> $GITHUB_ENV
+          echo "VERSION=0.0.0-PR-${{ github.event.issue.number }}-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "VERSION: 0.0.0-PR-${{ github.event.issue.number }}-$(git rev-parse --short HEAD)"
+      - name: Echo Version
+        run: |
+          source $GITHUB_ENV
+          echo "VERSION=${VERSION}"
+
 
 
       # - name: Pull Request data
