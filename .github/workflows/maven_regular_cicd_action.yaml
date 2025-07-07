@@ -108,13 +108,7 @@ jobs:
       - name: 'Set_Up_Cloud_SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
         with:
-          version: '>= 363.0.0'
-
-      - name: Docker_Auth
-        run: |-
-              #!/bin/bash
-              gcloud auth configure-docker us-docker.pkg.dev
-      
+          version: '>= 363.0.0'      
       - name: Set_Variables
         run: |
           echo "VERSION=0.0.0-${{ github.event.issue.number }}" >> $GITHUB_ENV
@@ -122,8 +116,7 @@ jobs:
           echo "VERSION: 0.0.0-PR-${{ github.event.issue.number }}-$(git rev-parse --short HEAD)"
       - name: Echo Version
         run: |
-          source $GITHUB_ENV
-          echo "VERSION=${VERSION}"
+              echo "VERSION=$VERSION"
 
 
 
