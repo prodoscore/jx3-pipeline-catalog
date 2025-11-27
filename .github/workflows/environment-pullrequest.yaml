@@ -66,11 +66,10 @@ jobs:
         working-directory: "${{ github.workspace }}/source"
         run: |
           export SUBDIR="$PWD"
-          echo "git cloning url: $REPO_URL version $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER@$PULL_PULL_SHA to dir: $SUBDIR"
-          git fetch origin $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
-          git checkout $(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
-          git reset --hard $PULL_PULL_SHA
-          echo "checked out revision: $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER@$PULL_PULL_SHA to dir: $SUBDIR"
+          echo "git cloning url: $REPO_URL version $PULL_PULL_REF@$PULL_PULL_SHA to dir: $SUBDIR"
+          git fetch origin $PULL_PULL_REF
+          git checkout $PULL_PULL_SHA
+          echo "checked out revision: $PULL_PULL_REF@$PULL_PULL_SHA to dir: $SUBDIR"
       - name: git-merge
         working-directory: "${{ github.workspace }}/source"
         run: |
