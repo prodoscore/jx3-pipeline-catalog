@@ -15,7 +15,7 @@ on:
     secrets:
       BOT_TOKEN:
         description: "Bot token"
-        required: true
+        required: false
 env:
   JX_KUBERNETES: true
   SOURCE_DIR: "${{ github.workspace }}/source"
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           path: "${{ github.workspace }}/source"
-          token: ${{ secrets.BOT_TOKEN }}
+          token: ${{ secrets.BOT_TOKEN || github.token }}
       - run: |
           git config --global --add safe.directory '*'
       - id: "auth"
@@ -80,5 +80,5 @@ jobs:
         env:
           HELMFILE_CACHE_HOME: "${{ github.workspace }}/.cache"
           GITHUB_ACTOR: ${{ inputs.BOT_USER }}
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN || github.token }}
           
