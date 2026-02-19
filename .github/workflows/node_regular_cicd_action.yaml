@@ -169,6 +169,8 @@ jobs:
                         echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE"
                         echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE" >> comment.txt
                     done
+                    cat comment.txt
+                    
       - name: Docker_Push
         id: docker_push
         shell: bash
