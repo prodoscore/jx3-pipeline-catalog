@@ -163,10 +163,6 @@ jobs:
                         fi
                         if [ -z "$SIZE" ]; then
                           SIZE="N/A"
-                        else
-                          # Convert bytes to MB
-                          SIZE_MB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
-                          SIZE="${SIZE_MB} MB"
                         fi
 
                         # Append a single row per image: IMAGE_NAME | TAG | SIZE
