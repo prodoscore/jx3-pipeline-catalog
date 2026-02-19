@@ -138,34 +138,43 @@ jobs:
                     # Find all subdirectories under the charts directory
                     SUBDIRS=$(find "${CHARTS_DIR}" -type d -mindepth 1 -maxdepth 1)
 
+                    # Initialise Docker build details table
+                    echo "##### Docker build details" > comment.txt
+                    echo "IMAGE | TAG | SIZE" >> comment.txt
+                    echo "------ | ------ | ------ " >> comment.txt
+
                     # Package each subdirectory as a Helm chart
                     for SUBDIR in ${SUBDIRS}; do
                         IMAGE_NAME=${SUBDIR##*/}
 
                         echo "SHA: $GIT_SHORT_HASH"
                         echo "Building Docker image ..."
-                        docker build -f "Dockerfile" -t "$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME:$GIT_SHORT_HASH" .
+                        FULL_REPO="$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME"
+                        FULL_IMAGE="$FULL_REPO:$GIT_SHORT_HASH"
+
+                        docker build -f "Dockerfile" -t "$FULL_IMAGE" .
 
                         echo "*************************************************************"
 
-                        docker image ls | grep -ai $REGISTRIES
-                        docker image ls | grep -ai $REGISTRIES > dockertags.txt
+                        # Get image size directly from the built image
+                        SIZE=$(docker inspect "$FULL_IMAGE" --format='{{.Size}}' 2>/dev/null || echo "")
+                        if [ -z "$SIZE" ]; then
+                          # Fallback: query by repository and tag
+                          SIZE=$(docker images --filter "reference=$FULL_IMAGE" --format '{{.Size}}' 2>/dev/null || echo "")
+                        fi
+                        if [ -z "$SIZE" ]; then
+                          SIZE="N/A"
+                        else
+                          # Convert bytes to MB
+                          SIZE_MB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
+                          SIZE="${SIZE_MB} MB"
+                        fi
 
-                        # Read input from dockertags.txt
-                        echo "##### Docker build details" >> comment.txt
-                        echo "IMAGE | TAG | SIZE" >> comment.txt
-                        echo "------ | ------ | ------ " >> comment.txt
-
-                        while IFS= read -r line; do
-                            # Use '/' as the delimiter and print the text after the 4th '/'
-                            OUTPUT=$(echo "$line" | awk -F'/' '{print $(NF-0)}')
-                            IMAGE=$(echo "$OUTPUT" | awk '{print $1}')
-                            TAG=$(echo "$OUTPUT" | awk '{print $2}')
-                            SIZE=$(echo "$OUTPUT" | awk '{print $7}')
-                            # Print the result
-                            echo "$IMAGE | $TAG | $SIZE" >> comment.txt
-                        done < dockertags.txt
+                        # Append a single row per image: IMAGE_NAME | TAG | SIZE
+                        echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE"
+                        echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE" >> comment.txt
                     done
+                    cat comment.txt
 
       - name: Docker_Push
         id: docker_push
