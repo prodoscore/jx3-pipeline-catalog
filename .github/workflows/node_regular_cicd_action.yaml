@@ -198,8 +198,8 @@ jobs:
           # Initialize report
           {
             echo "##### Docker build details"
-            echo "IMAGE | TAG | SIZE (MiB) | SIZE (MB) | BYTES"
-            echo "------ | ------ | ------ | ------ | ------"
+            echo "IMAGE | TAG | SIZE (MiB)"
+            echo "------ | ------ | ------"
           } > comment.txt
       
           # Loop safely through chart subdirectories
@@ -227,16 +227,13 @@ jobs:
       
             if [[ -z "${SIZE_BYTES}" || "${SIZE_BYTES}" == "<no value>" ]]; then
               SIZE_MIB="N/A"
-              SIZE_MB="N/A"
-              SIZE_BYTES="N/A"
             else
-              # MiB (binary) and MB (decimal) to avoid confusion in comparisons
+              # MiB (binary) to avoid confusion in comparisons
               SIZE_MIB="$(awk "BEGIN {printf \"%.2f\", ${SIZE_BYTES} / 1048576}")"
-              SIZE_MB="$(awk "BEGIN {printf \"%.2f\", ${SIZE_BYTES} / 1000000}")"
             fi
       
-            echo "${IMAGE_NAME} | ${GIT_SHORT_HASH} | ${SIZE_MIB} MiB | ${SIZE_MB} MB | ${SIZE_BYTES}"
-            echo "${IMAGE_NAME} | ${GIT_SHORT_HASH} | ${SIZE_MIB} MiB | ${SIZE_MB} MB | ${SIZE_BYTES}" >> comment.txt
+            echo "${IMAGE_NAME} | ${GIT_SHORT_HASH} | ${SIZE_MIB} MiB"
+            echo "${IMAGE_NAME} | ${GIT_SHORT_HASH} | ${SIZE_MIB} MiB" >> comment.txt
       
             # Helpful debugging (layer-by-layer size)
             echo "=== docker history: ${FULL_IMAGE} ==="
