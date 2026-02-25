@@ -1,0 +1,89 @@
+name: Reusable Typo Check
+
+on:
+  workflow_call:
+    inputs:
+      target_branches:
+        description: 'Target branches to run on (JSON array)'
+        required: false
+        type: string
+        default: '["main", "develop"]'
+      file_patterns:
+        description: 'File patterns to include (space-separated)'
+        required: false
+        type: string
+        default: '**/*'
+      exclude_patterns:
+        description: 'File patterns to exclude (space-separated)'
+        required: false
+        type: string
+        default: '*.png *.jpg *.jpeg *.gif *.ico *.pdf *.zip *.tar *.gz *.exe *.dll *.so *.dylib *.lock package-lock.json yarn.lock Pipfile* *.toml'
+      config_file:
+        description: 'Path to typos config file'
+        required: false
+        type: string
+        default: '.typos.toml'
+
+jobs:
+  typos:
+    runs-on: ubuntu-latest
+    name: Check for typos in edited lines only
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # Fetch full history for accurate diff
+        fetch-depth: 0
+        # Use the calling repository's token
+        token: ${{ github.token }}
+
+    - name: Install typos CLI
+      run: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        # Fetch the latest release URL
+        LATEST_URL=$(curl -s https://api.github.com/repos/crate-ci/typos/releases/latest \
+          | grep browser_download_url \
+          | grep x86_64-unknown-linux-musl.tar.gz \
+          | cut -d '"' -f 4)
+
+        # Create a temp directory
+        TMP_DIR=$(mktemp -d)
+        trap 'rm -rf "$TMP_DIR"' EXIT
+
+        # Download and extract in the temp directory
+        curl -LsSf "$LATEST_URL" | tar xzf - -C "$TMP_DIR"
+
+        # Move binary to /usr/local/bin with sudo
+        sudo mv "$TMP_DIR/typos" /usr/local/bin/
+
+    - name: Generate diff and extract added lines
+      run: |
+        git fetch origin ${{ github.base_ref }} --depth=1
+        git diff origin/${{ github.base_ref }} --unified=0 > pr.diff
+        grep '^+[^+]' pr.diff | sed 's/^+//' > added_lines.txt || true
+
+    - name: Write added lines to temp file for checking
+      run: |
+        mkdir -p tmp
+        cp added_lines.txt tmp/added.txt
+
+    - name: Run typos on added lines
+      id: run_typos
+      run: |
+        typos tmp/added.txt > typos_report.txt || true
+        echo "### Spelling Mistakes Found" > comment.md
+        if [ -s typos_report.txt ]; then
+          cat typos_report.txt >> comment.md
+        else
+          echo "✅ No spelling mistakes found!" >> comment.md
+        fi
+
+    - name: Comment on PR
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body-path: comment.md
