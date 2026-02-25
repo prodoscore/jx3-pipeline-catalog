@@ -120,87 +120,160 @@ jobs:
           echo "pr_number=${pr_number}" >> $GITHUB_ENV
           echo "pr_number: ${pr_number}"
 
-      - name: Docker_Build        
-        run: |-
-                    #!/bin/bash
-                    pwd
-                    ls -ltrh
-                    git branch
-                    REGISTRIES="${{env.REGISTRIES}}"
-                    REPOSITORY="${{env.REPOSITORY}}"
-                    GIT_SHORT_HASH="0.0.0-PR-${pr_number}-$(git rev-parse --short HEAD)"
-                    # GIT_SHORT_HASH="0.0.0-$(git rev-parse --short HEAD)"
-                    ROOT_DIR="$(pwd)"
-                    # Define the charts directory
-                    CHARTS_DIR="${ROOT_DIR}/charts"
+      # - name: Docker_Build        
+      #   run: |-
+      #               #!/bin/bash
+      #               pwd
+      #               ls -ltrh
+      #               git branch
+      #               REGISTRIES="${{env.REGISTRIES}}"
+      #               REPOSITORY="${{env.REPOSITORY}}"
+      #               GIT_SHORT_HASH="0.0.0-PR-${pr_number}-$(git rev-parse --short HEAD)"
+      #               # GIT_SHORT_HASH="0.0.0-$(git rev-parse --short HEAD)"
+      #               ROOT_DIR="$(pwd)"
+      #               # Define the charts directory
+      #               CHARTS_DIR="${ROOT_DIR}/charts"
 
-                    # Find all subdirectories under the charts directory
-                    SUBDIRS=$(find "${CHARTS_DIR}" -type d -mindepth 1 -maxdepth 1)
+      #               # Find all subdirectories under the charts directory
+      #               SUBDIRS=$(find "${CHARTS_DIR}" -type d -mindepth 1 -maxdepth 1)
 
-                    # Initialise Docker build details table
-                    echo "##### Docker build details" > comment.txt
-                    echo "IMAGE | TAG | SIZE" >> comment.txt
-                    echo "------ | ------ | ------ " >> comment.txt
+      #               # Initialise Docker build details table
+      #               echo "##### Docker build details" > comment.txt
+      #               echo "IMAGE | TAG | SIZE" >> comment.txt
+      #               echo "------ | ------ | ------ " >> comment.txt
 
-                    # Package each subdirectory as a Helm chart
-                    for SUBDIR in ${SUBDIRS}; do
-                        IMAGE_NAME=${SUBDIR##*/}
+      #               # Package each subdirectory as a Helm chart
+      #               for SUBDIR in ${SUBDIRS}; do
+      #                   IMAGE_NAME=${SUBDIR##*/}
 
-                        echo "SHA: $GIT_SHORT_HASH"
-                        echo "Building Docker image ..."
-                        FULL_REPO="$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME"
-                        FULL_IMAGE="$FULL_REPO:$GIT_SHORT_HASH"
+      #                   echo "SHA: $GIT_SHORT_HASH"
+      #                   echo "Building Docker image ..."
+      #                   FULL_REPO="$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME"
+      #                   FULL_IMAGE="$FULL_REPO:$GIT_SHORT_HASH"
 
-                        docker build -f "Dockerfile" -t "$FULL_IMAGE" .
+      #                   docker build -f "Dockerfile" -t "$FULL_IMAGE" .
 
-                        echo "*************************************************************"
+      #                   echo "*************************************************************"
 
-                        # Get image size directly from the built image
-                        SIZE=$(docker inspect "$FULL_IMAGE" --format='{{.Size}}' 2>/dev/null || echo "")
-                        if [ -z "$SIZE" ]; then
-                          # Fallback: query by repository and tag
-                          SIZE=$(docker images --filter "reference=$FULL_IMAGE" --format '{{.Size}}' 2>/dev/null || echo "")
-                        fi
-                        if [ -z "$SIZE" ]; then
-                          SIZE="N/A"
-                        else
-                          # Convert bytes to MB
-                          SIZE_MB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
-                          SIZE="${SIZE_MB} MB"
-                        fi
+      #                   # Get image size directly from the built image
+      #                   SIZE=$(docker inspect "$FULL_IMAGE" --format='{{.Size}}' 2>/dev/null || echo "")
+      #                   if [ -z "$SIZE" ]; then
+      #                     # Fallback: query by repository and tag
+      #                     SIZE=$(docker images --filter "reference=$FULL_IMAGE" --format '{{.Size}}' 2>/dev/null || echo "")
+      #                   fi
+      #                   if [ -z "$SIZE" ]; then
+      #                     SIZE="N/A"
+      #                   else
+      #                     # Convert bytes to MB
+      #                     SIZE_MB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
+      #                     SIZE="${SIZE_MB} MB"
+      #                   fi
 
-                        # Append a single row per image: IMAGE_NAME | TAG | SIZE
-                        echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE"
-                        echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE" >> comment.txt
-                    done
-                    cat comment.txt
-                    docker image ls -a 
-                    
-      - name: Docker_Push
-        id: docker_push
+      #                   # Append a single row per image: IMAGE_NAME | TAG | SIZE
+      #                   echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE"
+      #                   echo "$IMAGE_NAME | $GIT_SHORT_HASH | $SIZE" >> comment.txt
+      #               done
+      #               cat comment.txt
+      #               docker image ls -a 
+      - name: Docker_Build
         shell: bash
-        run: |
+        run: |-
           set -euo pipefail
-
-          REGISTRY="us-docker.pkg.dev"
-
-          # Script-safe output
-          docker images --format '{{.Repository}}|{{.Tag}}|{{.ID}}' \
-            | grep -F "$REGISTRY" \
-            | while IFS='|' read -r image_name image_tag image_id; do
-
-                # Skip invalid rows
-                if [[ -z "$image_name" || "$image_name" == "<none>" || -z "$image_tag" || "$image_tag" == "<none>" ]]; then
-                  continue
-                fi
-
-                echo "--- Docker Push ${image_name}:${image_tag} ---"
-                docker push "${image_name}:${image_tag}"
-
-                # last pushed wins if multiple images
-                echo "image_name=${image_name}" >> "$GITHUB_OUTPUT"
-                echo "image_tag=${image_tag}" >> "$GITHUB_OUTPUT"
-              done
+      
+          pwd
+          ls -ltrh
+          git branch
+      
+          echo "=== Docker versions ==="
+          docker version || true
+          docker buildx version || true
+          echo "======================="
+      
+          REGISTRIES="${{ env.REGISTRIES }}"
+          REPOSITORY="${{ env.REPOSITORY }}"
+          GIT_SHORT_HASH="0.0.0-PR-${pr_number}-$(git rev-parse --short HEAD)"
+          ROOT_DIR="$(pwd)"
+          CHARTS_DIR="${ROOT_DIR}/charts"
+      
+          # Initialize report
+          {
+            echo "##### Docker build details"
+            echo "IMAGE | TAG | SIZE (MiB) | SIZE (MB) | BYTES"
+            echo "------ | ------ | ------ | ------ | ------"
+          } > comment.txt
+      
+          # Loop safely through chart subdirectories
+          while IFS= read -r -d '' SUBDIR; do
+            IMAGE_NAME="${SUBDIR##*/}"
+      
+            echo "SHA: $GIT_SHORT_HASH"
+            echo "Building Docker image for: $IMAGE_NAME"
+      
+            FULL_REPO="$REGISTRIES/$REPOSITORY/images/$IMAGE_NAME"
+            FULL_IMAGE="$FULL_REPO:$GIT_SHORT_HASH"
+      
+            # Use buildx + --load + no provenance for more consistent local image result
+            docker buildx build \
+              --load \
+              --provenance=false \
+              -f "Dockerfile" \
+              -t "$FULL_IMAGE" \
+              .
+      
+            echo "*************************************************************"
+      
+            # Get local image size in bytes (uncompressed local image store size)
+            SIZE_BYTES="$(docker image inspect "$FULL_IMAGE" --format='{{.Size}}' 2>/dev/null || true)"
+      
+            if [[ -z "${SIZE_BYTES}" || "${SIZE_BYTES}" == "<no value>" ]]; then
+              SIZE_MIB="N/A"
+              SIZE_MB="N/A"
+              SIZE_BYTES="N/A"
+            else
+              # MiB (binary) and MB (decimal) to avoid confusion in comparisons
+              SIZE_MIB="$(awk "BEGIN {printf \"%.2f\", ${SIZE_BYTES} / 1048576}")"
+              SIZE_MB="$(awk "BEGIN {printf \"%.2f\", ${SIZE_BYTES} / 1000000}")"
+            fi
+      
+            echo "${IMAGE_NAME} | ${GIT_SHORT_HASH} | ${SIZE_MIB} MiB | ${SIZE_MB} MB | ${SIZE_BYTES}"
+            echo "${IMAGE_NAME} | ${GIT_SHORT_HASH} | ${SIZE_MIB} MiB | ${SIZE_MB} MB | ${SIZE_BYTES}" >> comment.txt
+      
+            # Helpful debugging (layer-by-layer size)
+            echo "=== docker history: ${FULL_IMAGE} ==="
+            docker history "$FULL_IMAGE" --human || true
+            echo "=== docker image ls (single image) ==="
+            docker image ls --digests "$FULL_IMAGE" || true
+            echo "======================================"
+      
+          done < <(find "${CHARTS_DIR}" -mindepth 1 -maxdepth 1 -type d -print0)
+      
+          cat comment.txt
+          docker image ls -a                 
+            - name: Docker_Push
+              id: docker_push
+              shell: bash
+              run: |
+                set -euo pipefail
+      
+                REGISTRY="us-docker.pkg.dev"
+      
+                # Script-safe output
+                docker images --format '{{.Repository}}|{{.Tag}}|{{.ID}}' \
+                  | grep -F "$REGISTRY" \
+                  | while IFS='|' read -r image_name image_tag image_id; do
+      
+                      # Skip invalid rows
+                      if [[ -z "$image_name" || "$image_name" == "<none>" || -z "$image_tag" || "$image_tag" == "<none>" ]]; then
+                        continue
+                      fi
+      
+                      echo "--- Docker Push ${image_name}:${image_tag} ---"
+                      docker push "${image_name}:${image_tag}"
+      
+                      # last pushed wins if multiple images
+                      echo "image_name=${image_name}" >> "$GITHUB_OUTPUT"
+                      echo "image_tag=${image_tag}" >> "$GITHUB_OUTPUT"
+                    done
       - name: Helm_Package_And_push
         run: |
               #!/bin/bash
