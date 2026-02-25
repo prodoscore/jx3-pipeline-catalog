@@ -249,10 +249,10 @@ jobs:
       
           cat comment.txt
           docker image ls -a                 
-            - name: Docker_Push
-              id: docker_push
-              shell: bash
-              run: |
+      - name: Docker_Push
+        id: docker_push
+        shell: bash
+        run: |
                 set -euo pipefail
       
                 REGISTRY="us-docker.pkg.dev"
