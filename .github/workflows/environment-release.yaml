@@ -15,7 +15,7 @@ on:
     secrets:
       BOT_TOKEN:
         description: "Bot token"
-        required: true
+        required: false
 env:
   JX_KUBERNETES: true
   SOURCE_DIR: "${{ github.workspace }}/source"
@@ -40,9 +40,14 @@ jobs:
           curl -L https://github.com/jenkins-x/jx/releases/download/v3.7.7/jx-linux-amd64.tar.gz | tar xzv
           chmod +x jx 
           mv jx /usr/local/bin
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: pip install pyyaml
       - uses: actions/checkout@v3
         with:
           path: "${{ github.workspace }}/source"
+          token: ${{ secrets.BOT_TOKEN || github.token }}
       - run: |
           git config --global --add safe.directory '*'
       - id: "auth"
@@ -75,4 +80,5 @@ jobs:
         env:
           HELMFILE_CACHE_HOME: "${{ github.workspace }}/.cache"
           GITHUB_ACTOR: ${{ inputs.BOT_USER }}
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN || github.token }}
+          

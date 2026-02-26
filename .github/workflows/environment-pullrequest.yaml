@@ -24,6 +24,7 @@ env:
   PULL_PULL_REF: refs/pull/${{ github.event.pull_request.number }}/head
   PULL_PULL_SHA: ${{ github.event.pull_request.head.sha }}
   PULL_REFS: ${{ github.base_ref }}:${{ github.event.pull_request.base.sha }},${{ github.event.pull_request.number }}:${{ github.event.pull_request.head.sha }}:refs/pull/${{ github.event.pull_request.number }}/head
+  PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
   JOB_NAME: "verify"
   JOB_SPEC: "type:presubmit"
   JOB_TYPE: "presubmit"
@@ -53,20 +54,17 @@ jobs:
           curl -L https://github.com/jenkins-x/jx/releases/download/v3.7.7/jx-linux-amd64.tar.gz | tar xzv
           chmod +x jx 
           mv jx /usr/local/bin
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: pip install pyyaml
       - uses: actions/checkout@v3
         with:
           path: "${{ github.workspace }}/source"
+          ref: ${{ env.PR_HEAD_REF }}
+          fetch-depth: 0
       - run: |
           git config --global --add safe.directory '*'
-      - name: git-clone
-        working-directory: "${{ github.workspace }}/source"
-        run: |
-          export SUBDIR="$PWD"
-          echo "git cloning url: $REPO_URL version $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER@$PULL_PULL_SHA to dir: $SUBDIR"
-          git fetch origin $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
-          git checkout $(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
-          git reset --hard $PULL_PULL_SHA
-          echo "checked out revision: $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER@$PULL_PULL_SHA to dir: $SUBDIR"
       - name: git-merge
         working-directory: "${{ github.workspace }}/source"
         run: |
