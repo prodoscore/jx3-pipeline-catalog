@@ -91,7 +91,7 @@ jobs:
         shell: sh
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           #ref: ${{ github.event.client_payload.ref }}
            ref: refs/pull/${{ github.event.issue.number }}/head
@@ -343,7 +343,7 @@ jobs:
         shell: sh
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           #ref: ${{ github.event.client_payload.ref }}
            ref: refs/pull/${{ github.event.issue.number }}/head  
