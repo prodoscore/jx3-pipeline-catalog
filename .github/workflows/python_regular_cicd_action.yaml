@@ -281,7 +281,7 @@ jobs:
               : '';
             const body = `${buildDetails}
 
-            ## Docker Image Scan
+            ### Docker Image Scan Report
 
             **Image:** \`${process.env.IMAGE_REF}\`
 
