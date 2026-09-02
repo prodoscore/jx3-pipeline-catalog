@@ -345,12 +345,6 @@ jobs:
           pr_number='${{ github.event.issue.number }}'
           echo "pr_number=${pr_number}" >> $GITHUB_ENV
           cat comment.txt
-      - name: Comment PR
-        uses: thollander/actions-comment-pull-request@v2
-        id: hello
-        with:
-          filePath:  comment.txt
-          pr_number: ${{ steps.pr_data.outputs.pr_number }}
       - name: Run Trivy vulnerability scanner
         id: trivy-scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -369,13 +363,14 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const MAX_BODY = 65536;
             const buildDetails = fs.existsSync('comment.txt')
               ? fs.readFileSync('comment.txt', 'utf8')
               : '';
-            const report = fs.existsSync('trivy-results.md')
+            let report = fs.existsSync('trivy-results.md')
               ? fs.readFileSync('trivy-results.md', 'utf8')
               : '';
-            const body = `${buildDetails}
+            const buildBody = (reportText) => `${buildDetails}
 
             ### Docker Image Scan Report
 
@@ -385,9 +380,16 @@ jobs:
             <summary>Report Summary</summary>
 
             \`\`\`text
-            ${report}
+            ${reportText}
             \`\`\`
             </details>`;
+            const truncationNotice = '\n\n... report truncated (exceeded comment size limit) ...';
+            let body = buildBody(report);
+            if (body.length > MAX_BODY) {
+              const overflow = body.length - MAX_BODY + truncationNotice.length;
+              report = report.slice(0, Math.max(0, report.length - overflow)) + truncationNotice;
+              body = buildBody(report);
+            }
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             await github.rest.issues.createComment({
