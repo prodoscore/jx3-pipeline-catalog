@@ -273,17 +273,15 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const marker = '<!-- pr-pipeline-summary -->';
             const buildDetails = fs.existsSync('comment.txt')
               ? fs.readFileSync('comment.txt', 'utf8')
               : '';
             const report = fs.existsSync('trivy-results.md')
               ? fs.readFileSync('trivy-results.md', 'utf8')
               : '';
-            const body = `${marker}
-            ${buildDetails}
+            const body = `${buildDetails}
 
-            ### Docker Image Scan Report
+            ## Docker Image Scan
 
             **Image:** \`${process.env.IMAGE_REF}\`
 
@@ -296,30 +294,12 @@ jobs:
             </details>`;
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
-            const comments = await github.paginate(github.rest.issues.listComments, {
+            await github.rest.issues.createComment({
               owner,
               repo,
               issue_number,
+              body,
             });
-            const existingComment = comments.find(
-              (comment) => comment.user.type === 'Bot' && comment.body.includes(marker),
-            );
-
-            if (existingComment) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existingComment.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
-              });
-            }
       
       # - name: Repo Scanner
       #   continue-on-error: true
