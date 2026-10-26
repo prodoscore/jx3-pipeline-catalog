@@ -175,6 +175,25 @@ jobs:
       #               done
       #               cat comment.txt
       #               docker image ls -a 
+      # Create a short-lived npm token for private Artifact Registry packages,
+      # using the Google login from the Auth step (Workload Identity Federation).
+      # The file is passed to the Docker build as a BuildKit secret, so it is never
+      # stored in an image layer. Dockerfiles that don't use the secret ignore it.
+      - name: NPM_Registry_Auth
+        shell: bash
+        run: |-
+          set -euo pipefail
+          NPMRC_SECRET="${RUNNER_TEMP}/npmrc"
+          touch "$NPMRC_SECRET"
+          chmod 600 "$NPMRC_SECRET"
+          if [ -f .npmrc ] && grep -q "pkg.dev" .npmrc; then
+            npx --yes google-artifactregistry-auth --repo-config=.npmrc --credential-config="$NPMRC_SECRET"
+            echo "npm registry token created"
+          else
+            echo "No Artifact Registry .npmrc found, skipping"
+          fi
+          echo "NPMRC_SECRET=${NPMRC_SECRET}" >> "$GITHUB_ENV"
+
       - name: Docker_Build
         shell: bash
         run: |-
@@ -216,6 +235,7 @@ jobs:
             docker buildx build \
               --load \
               --provenance=false \
+              --secret id=npmrc,src="$NPMRC_SECRET" \
               -f "Dockerfile" \
               -t "$FULL_IMAGE" \
               .
