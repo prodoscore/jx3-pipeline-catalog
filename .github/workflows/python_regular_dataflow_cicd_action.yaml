@@ -107,21 +107,18 @@ jobs:
                     echo "Repository Name: $REPO_NAME"
                     #Doker build
                     docker build -f "Dockerfile" -t "$REGISTRIES/$REPOSITORY/images/$REPO_NAME:$GIT_SHORT_HASH" .
-                    docker image ls | grep -ai $REPO_NAME
-                    docker image ls | grep -ai $REPO_NAME > dockertags.txt
-                    
+                    # Use docker's own formatter (tab-delimited) so SIZE isn't misaligned by variable-length CREATED text
+                    docker image ls --format '{{.Repository}}	{{.Tag}}	{{.Size}}' | grep -ai "$REPO_NAME" > dockertags.txt
+                    cat dockertags.txt
+
                     echo "##### Docker build details" >> comment.txt
                     echo "IMAGE | TAG | SIZE" >> comment.txt
                     echo "------ | ------ | ------ " >> comment.txt
                     # Read input from dockertags.txt
-                    while IFS= read -r line; do
-                            # Use '/' as the delimiter and print the text after the 4th '/'
-                            OUTPUT=$(echo "$line" | awk -F'/' '{print $(NF-0)}')
-                            IMAGE=$(echo "$OUTPUT" | awk '{print $1}')
-                            TAG=$(echo "$OUTPUT" | awk '{print $2}')
-                            SIZE=$(echo "$OUTPUT" | awk '{print $7}')
+                    while IFS=$'\t' read -r repo tag size; do
+                            IMAGE=$(echo "$repo" | awk -F'/' '{print $NF}')
                             # Print the result
-                            echo "$IMAGE | $TAG | $SIZE" >> comment.txt
+                            echo "$IMAGE | $tag | $size" >> comment.txt
                     done < dockertags.txt
 
 
