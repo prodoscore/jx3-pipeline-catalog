@@ -53,6 +53,25 @@ jobs:
           curl -L https://github.com/jenkins-x/jx/releases/download/v3.7.7/jx-linux-amd64.tar.gz | tar xzv
           chmod +x jx 
           mv jx /usr/local/bin
+
+      # Pin Helm 3 explicitly instead of relying on the runner's preinstalled
+      # `helm`, which GitHub has started shipping as Helm 4 on some images.
+      # Our pinned helmfile v0.1001.0 still detects the Helm version via
+      # `helm version --client --short`, and Helm 4 removed that flag
+      # (helm/helm#31301), so an unpinned/Helm-4 runner breaks `helmfile
+      # template` entirely. Helm 3.x still supports --client (confirmed in
+      # the v3.22.1 source), so pin the latest Helm 3 release here. Revisit
+      # this pin once helmfile is upgraded to a version that no longer uses
+      # --client.
+      - name: Set up Helm v3
+        uses: azure/setup-helm@v5
+        with:
+          version: 'v3.22.1'
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: pip install pyyaml
       - uses: actions/checkout@v3
         with:
           path: "${{ github.workspace }}/source"
