@@ -127,27 +127,19 @@ jobs:
 
       - name: Docker_Push
         id: docker_push
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.docker_build.outputs.git_short_hash }}
         run: |
-            #!/bin/bash
+          set -euo pipefail
 
-            # Set the desired registry
-            REGISTRY="us-docker.pkg.dev"
+          IMAGE_NAME="${REGISTRIES}/${REPOSITORY}/images/${REPO_NAME}"
 
-            # Get the list of images and iterate through them
-            docker image ls | grep -ai $REGISTRY | while read -r line; do
-                # Extract image name, tag, and ID
-                image_name=$(echo $line | awk '{print $1}')
-                image_tag=$(echo $line | awk '{print $2}')
-                image_id=$(echo $line | awk '{print $3}')
+          echo "Docker Push ${IMAGE_NAME}:${IMAGE_TAG}"
+          docker push "${IMAGE_NAME}:${IMAGE_TAG}"
 
-                # Push the image to the specified registry
-                echo "Docker Push $image_name"
-                docker tag $image_id $image_name:$image_tag
-                docker push $image_name:$image_tag
-                #echo "image_name=world" >> "$GITHUB_OUTPUT"
-                # Output the image name and tag
-                echo "image_name=${image_name}" >> "$GITHUB_OUTPUT"
-                echo "image_tag=${image_tag}" >> "$GITHUB_OUTPUT"
+          echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
                 
             done
 
