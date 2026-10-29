@@ -93,7 +93,8 @@ jobs:
               gcloud auth configure-docker us-docker.pkg.dev
 
       - name: Docker_Build   
-        id: docker_build     
+        id: docker_build
+        shell: bash
         run: |-
                     #!/bin/bash
                     pwd
