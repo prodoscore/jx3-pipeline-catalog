@@ -158,10 +158,3 @@ jobs:
         with:
           filePath:  comment.txt
           pr_number: ${{ steps.pr_data.outputs.pr_number }}
-
-
-
-
-
-
-
