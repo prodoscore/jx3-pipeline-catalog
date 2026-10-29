@@ -175,6 +175,41 @@ jobs:
       #               done
       #               cat comment.txt
       #               docker image ls -a 
+      # Create a short-lived npm token for private Artifact Registry packages,
+      # using the Google login from the Auth step (Workload Identity Federation).
+      # The file is passed to the Docker build as a BuildKit secret, so it is never
+      # stored in an image layer. Dockerfiles that don't use the secret ignore it.
+      #
+      # The repo .npmrc is only READ, never modified, so repos that still keep
+      # credentials in .npmrc continue to build exactly as before.
+      # (google-artifactregistry-auth is not used here because it rewrites the repo
+      # .npmrc and moves any _password out of it, which breaks those repos.)
+      - name: NPM_Registry_Auth
+        shell: bash
+        run: |-
+          set -euo pipefail
+          NPMRC_SECRET="${RUNNER_TEMP}/npmrc"
+          : > "$NPMRC_SECRET"
+          chmod 600 "$NPMRC_SECRET"
+
+          # Artifact Registry npm registries referenced in the repo .npmrc (read-only)
+          REGISTRIES=""
+          if [ -f .npmrc ]; then
+            REGISTRIES="$(grep -oE '//[a-z0-9-]+-npm\.pkg\.dev/[^ :"]*/' .npmrc | sort -u || true)"
+          fi
+
+          if [ -n "$REGISTRIES" ]; then
+            TOKEN="$(gcloud auth print-access-token)"
+            echo "::add-mask::${TOKEN}"
+            for REGISTRY in $REGISTRIES; do
+              echo "${REGISTRY}:_authToken=${TOKEN}" >> "$NPMRC_SECRET"
+              echo "npm registry token created for: ${REGISTRY}"
+            done
+          else
+            echo "No Artifact Registry .npmrc found, skipping"
+          fi
+          echo "NPMRC_SECRET=${NPMRC_SECRET}" >> "$GITHUB_ENV"
+
       - name: Docker_Build
         shell: bash
         run: |-
@@ -216,6 +251,7 @@ jobs:
             docker buildx build \
               --load \
               --provenance=false \
+              --secret id=npmrc,src="$NPMRC_SECRET" \
               -f "Dockerfile" \
               -t "$FULL_IMAGE" \
               .
